@@ -1,0 +1,104 @@
+{
+  "departments": {
+    "Emergency Room": {
+      "scope": "Life-threatening and critical emergencies",
+      "typical_conditions": ["cardiac arrest", "stroke", "severe trauma", "anaphylaxis", "uncontrolled bleeding"],
+      "primary_symptoms": ["chest pain with sweating", "difficulty breathing at rest", "loss of consciousness", "seizure", "severe bleeding"],
+      "location": "Ground Floor, Red Zone",
+      "floor": "G",
+      "contact": "Ext: 100",
+      "accepts_walkins": true,
+      "24_hours": true
+    },
+    "Cardiology": {
+      "scope": "Heart and blood vessel conditions",
+      "typical_conditions": ["chest pain evaluation", "palpitations", "hypertension", "arrhythmia"],
+      "primary_symptoms": ["chest pain", "palpitations", "high blood pressure", "shortness of breath on exertion"],
+      "location": "Floor 2, Block B",
+      "floor": "2",
+      "contact": "Ext: 210",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "Neurology": {
+      "scope": "Brain and nervous system conditions",
+      "typical_conditions": ["headache evaluation", "migraine", "epilepsy", "stroke recovery"],
+      "primary_symptoms": ["headache", "dizziness", "seizures", "numbness", "weakness", "memory issues"],
+      "location": "Floor 3, Block A",
+      "floor": "3",
+      "contact": "Ext: 310",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "ENT": {
+      "scope": "Ear, nose, and throat conditions",
+      "typical_conditions": ["tonsillitis", "sinusitis", "ear infections", "hearing loss"],
+      "primary_symptoms": ["sore throat", "ear pain", "hearing loss", "sinus congestion", "nosebleed"],
+      "location": "Floor 1, Block C",
+      "floor": "1",
+      "contact": "Ext: 120",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "Dermatology": {
+      "scope": "Skin, hair, and nail conditions",
+      "typical_conditions": ["eczema", "psoriasis", "acne", "skin infections", "wound care"],
+      "primary_symptoms": ["rash", "itching", "skin sores", "hair loss", "nail problems"],
+      "location": "Floor 1, Block D",
+      "floor": "1",
+      "contact": "Ext: 140",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "Gastroenterology": {
+      "scope": "Digestive system conditions",
+      "typical_conditions": ["abdominal pain evaluation", "IBS", "GERD", "liver disease"],
+      "primary_symptoms": ["abdominal pain", "nausea", "vomiting", "diarrhea", "blood in stool", "jaundice"],
+      "location": "Floor 2, Block C",
+      "floor": "2",
+      "contact": "Ext: 230",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "Pulmonology": {
+      "scope": "Lung and respiratory conditions",
+      "typical_conditions": ["asthma", "COPD", "pneumonia evaluation", "chronic cough"],
+      "primary_symptoms": ["cough", "shortness of breath", "wheezing", "chest congestion"],
+      "location": "Floor 3, Block B",
+      "floor": "3",
+      "contact": "Ext: 320",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "Orthopedics": {
+      "scope": "Bones, joints, and muscles",
+      "typical_conditions": ["fracture evaluation", "sprains", "arthritis", "back pain"],
+      "primary_symptoms": ["bone pain", "joint swelling", "injury", "back pain", "fracture suspicion"],
+      "location": "Floor 2, Block D",
+      "floor": "2",
+      "contact": "Ext: 240",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "General Medicine": {
+      "scope": "General health, mixed symptoms, unclear presentations",
+      "typical_conditions": ["fever evaluation", "general check-up", "mixed symptoms"],
+      "primary_symptoms": ["fever", "fatigue", "weight loss", "mixed symptoms", "general unwellness"],
+      "location": "Floor 1, Block A",
+      "floor": "1",
+      "contact": "Ext: 110",
+      "accepts_walkins": true,
+      "24_hours": false
+    },
+    "Pediatrics": {
+      "scope": "Children under 16 years",
+      "typical_conditions": ["childhood fever", "ear infections", "vaccinations", "growth concerns"],
+      "primary_symptoms": ["child fever", "child cough", "child rash", "infant crying"],
+      "location": "Floor 1, Block E",
+      "floor": "1",
+      "contact": "Ext: 150",
+      "accepts_walkins": true,
+      "24_hours": false
+    }
+  }
+}

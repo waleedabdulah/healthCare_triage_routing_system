@@ -1,0 +1,35 @@
+# LLM & Orchestration
+groq>=0.11.0
+langchain>=0.3.18
+langchain-groq>=0.2.3
+langchain-community>=0.3.18
+langgraph>=0.2.53
+
+# RAG
+chromadb>=0.5.23
+sentence-transformers>=3.3.1
+
+# MCP
+fastmcp>=2.3.3
+
+# Backend
+fastapi>=0.115.5
+uvicorn[standard]>=0.32.1
+python-multipart>=0.0.12
+sse-starlette>=2.1.3
+
+# Database
+sqlmodel>=0.0.22
+aiosqlite>=0.20.0
+
+# Config & Utilities
+pydantic-settings>=2.6.1
+python-dotenv>=1.0.1
+
+# Numeric (numpy 2.x has Python 3.14 wheels)
+numpy>=2.0.0
+
+# Dev / testing
+pytest>=8.3.3
+pytest-asyncio>=0.24.0
+httpx>=0.28.0
