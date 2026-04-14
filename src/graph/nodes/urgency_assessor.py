@@ -20,8 +20,9 @@ def _build_urgency_prompt(state: TriageState) -> str:
     rag_text = ""
     if rag_context:
         rag_text = "\n\nRELEVANT TRIAGE PROTOCOLS:\n"
-        for chunk in rag_context[:4]:
-            rag_text += f"- {chunk.get('text', '')}\n"
+        for chunk in rag_context[:3]:
+            text = chunk.get('text', '')[:600]
+            rag_text += f"- {text}\n"
 
     severity_text = f"{severity}/10" if severity else "not specified"
 
@@ -61,13 +62,24 @@ async def urgency_assessor_node(state: TriageState) -> dict:
         response = await llm.ainvoke(messages)
         assessment = parse_structured_output(response.content, UrgencyAssessment)
 
-        # Safety: if LLM confidence is low on non-emergency, bump to URGENT
-        if assessment.urgency == "NON_URGENT" and assessment.confidence < 0.70:
+        # Safety: escalate when confidence is low so under-triage risk is minimised.
+        # NON_URGENT < 0.70 → URGENT (same-day review is safer than "see a GP whenever")
+        # SELF_CARE  < 0.70 → NON_URGENT (schedule a visit rather than pure home monitoring)
+        if assessment.urgency.value == "NON_URGENT" and assessment.confidence < 0.70:
             logger.warning("Low confidence NON_URGENT → escalating to URGENT")
             return {
                 "urgency_level": "URGENT",
                 "urgency_confidence": assessment.confidence,
                 "urgency_reasoning": assessment.reasoning + " (escalated due to low confidence)",
+                "llm_model_used": get_model_name(),
+            }
+
+        if assessment.urgency.value == "SELF_CARE" and assessment.confidence < 0.70:
+            logger.warning("Low confidence SELF_CARE → escalating to NON_URGENT")
+            return {
+                "urgency_level": "NON_URGENT",
+                "urgency_confidence": assessment.confidence,
+                "urgency_reasoning": assessment.reasoning + " (escalated from SELF_CARE due to low confidence)",
                 "llm_model_used": get_model_name(),
             }
 

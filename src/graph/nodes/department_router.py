@@ -22,14 +22,17 @@ async def department_routing_node(state: TriageState) -> dict:
     if rag_context:
         rag_text = "\n\nRELEVANT PROTOCOL CONTEXT:\n"
         for chunk in rag_context[:3]:
-            rag_text += f"- {chunk.get('text', '')}\n"
+            text = chunk.get('text', '')[:600]
+            rag_text += f"- {text}\n"
 
     prompt = (
         f"PATIENT SYMPTOMS: {', '.join(symptoms) if symptoms else 'not specified'}\n"
         f"AGE GROUP: {age_group}\n"
         f"URGENCY LEVEL: {urgency}\n"
+        f"SYMPTOM DURATION: {state.get('symptom_duration') or 'not specified'}\n"
+        f"SELF-REPORTED SEVERITY: {str(state.get('symptom_severity')) + '/10' if state.get('symptom_severity') else 'not specified'}\n"
         f"{rag_text}\n"
-        f"Which department should this patient visit?"
+        f"Which department should this patient visit? Choose the single most appropriate department."
     )
 
     messages = [

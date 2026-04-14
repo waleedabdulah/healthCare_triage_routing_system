@@ -9,8 +9,10 @@ def start_session_node(state: TriageState) -> dict:
         "conversation_turns": 0,
         "extracted_symptoms": [],
         "red_flags_detected": [],
+        "ready_for_triage": False,
         "rag_context": [],
         "audit_written": False,
+        "human_review_flag": False,
         "patient_age_group": state.get("patient_age_group"),
         "patient_gender": state.get("patient_gender"),
         # Always reset triage results — prevents stale values from a previous

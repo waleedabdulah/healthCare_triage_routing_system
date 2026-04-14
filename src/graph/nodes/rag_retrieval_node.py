@@ -28,12 +28,12 @@ def rag_retrieval_node(state: TriageState) -> dict:
         if red_flags:
             results = store.query(
                 query_text=query,
-                n_results=5,
+                n_results=3,
                 where={"urgency_category": "EMERGENCY"},
             )
             # If not enough results with filter, do a broad search too
-            if len(results) < 3:
-                broad_results = store.query(query_text=query, n_results=5)
+            if len(results) < 2:
+                broad_results = store.query(query_text=query, n_results=3)
                 # Merge and deduplicate
                 seen_ids = {r["id"] for r in results}
                 for r in broad_results:
@@ -41,7 +41,7 @@ def rag_retrieval_node(state: TriageState) -> dict:
                         results.append(r)
                         seen_ids.add(r["id"])
         else:
-            results = store.query(query_text=query, n_results=5)
+            results = store.query(query_text=query, n_results=3)
 
         logger.info(f"RAG retrieved {len(results)} chunks for query: {query[:80]}")
         return {"rag_context": results}

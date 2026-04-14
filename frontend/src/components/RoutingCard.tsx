@@ -1,83 +1,160 @@
-import React from 'react'
-import { TriageResult } from '../store/sessionStore'
+import { useState, useEffect, useRef } from 'react'
+import { useSessionStore, TriageResult } from '../store/sessionStore'
+import { fetchBookingStatus } from '../api/bookingClient'
 import UrgencyBadge from './UrgencyBadge'
+import BookingModal from './BookingModal'
 
-interface Props {
-  result: TriageResult
-}
+interface Props { result: TriageResult }
 
 const DEPT_ICONS: Record<string, string> = {
-  'Emergency Room': '🚨',
-  'Cardiology': '❤️',
-  'Neurology': '🧠',
-  'ENT': '👂',
-  'Dermatology': '🩹',
-  'Gastroenterology': '🫁',
-  'Pulmonology': '🫧',
-  'Orthopedics': '🦴',
+  'Emergency Room':   '🚨',
+  'Cardiology':       '❤️',
+  'Neurology':        '🧠',
+  'ENT':              '👂',
+  'Dermatology':      '🩹',
+  'Gastroenterology': '🩻',
+  'Pulmonology':      '🫁',
+  'Orthopedics':      '🦴',
+  'Ophthalmology':    '👁️',
+  'Gynecology':       '🌸',
+  'Urology':          '💧',
+  'Psychiatry':       '🧩',
   'General Medicine': '🩺',
-  'Pediatrics': '👶',
+  'Pediatrics':       '👶',
 }
 
 const URGENCY_ACTION: Record<string, string> = {
-  EMERGENCY: 'Go to Emergency Room immediately',
-  URGENT: 'Visit OPD today — urgent consultation',
-  NON_URGENT: 'Schedule an OPD appointment',
-  SELF_CARE: 'Monitor at home — visit OPD if worsens',
+  EMERGENCY:  'Proceed to the Emergency Room immediately',
+  URGENT:     'Visit OPD today — same-day consultation required',
+  NON_URGENT: 'Schedule an OPD appointment at your earliest',
+  SELF_CARE:  'Monitor at home — visit OPD if symptoms worsen',
+}
+
+const URGENCY_ACCENT: Record<string, { light: string; dark: string }> = {
+  EMERGENCY:  { light: 'border-red-200 bg-red-50 text-red-700',     dark: 'dark:border-red-900 dark:bg-red-950/50 dark:text-red-400' },
+  URGENT:     { light: 'border-orange-200 bg-orange-50 text-orange-700', dark: 'dark:border-orange-900 dark:bg-orange-950/50 dark:text-orange-400' },
+  NON_URGENT: { light: 'border-amber-200 bg-amber-50 text-amber-700',  dark: 'dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-400' },
+  SELF_CARE:  { light: 'border-emerald-200 bg-emerald-50 text-emerald-700', dark: 'dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-400' },
 }
 
 export default function RoutingCard({ result }: Props) {
   const { urgencyLevel, routedDepartment, estimatedWaitMinutes, nextAvailableSlot, isEmergency } = result
   const deptIcon = routedDepartment ? (DEPT_ICONS[routedDepartment] ?? '🏥') : '🏥'
-  const action = urgencyLevel ? (URGENCY_ACTION[urgencyLevel] ?? '') : ''
+  const action   = urgencyLevel ? (URGENCY_ACTION[urgencyLevel] ?? '') : ''
+  const accent   = urgencyLevel && URGENCY_ACCENT[urgencyLevel]
+    ? `${URGENCY_ACCENT[urgencyLevel].light} ${URGENCY_ACCENT[urgencyLevel].dark}`
+    : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+
+  const [showBooking, setShowBooking] = useState(false)
+  const { appointmentBooked, setAppointmentBooked, pendingAppointmentId } = useSessionStore()
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Poll for confirmation even when the BookingModal is closed
+  useEffect(() => {
+    if (!pendingAppointmentId || appointmentBooked) return
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const status = await fetchBookingStatus(pendingAppointmentId)
+        if (status === 'confirmed') {
+          clearInterval(pollRef.current!)
+          setAppointmentBooked()
+        }
+      } catch { /* silent — keep polling */ }
+    }, 4000)
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [pendingAppointmentId, appointmentBooked])
 
   return (
-    <div className={`rounded-xl border-2 p-5 space-y-4 ${isEmergency ? 'border-red-400 bg-red-50' : 'border-blue-200 bg-white'}`}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-800">Triage Result</h2>
-        {urgencyLevel && <UrgencyBadge level={urgencyLevel} />}
+    <div className={`rounded-2xl border overflow-hidden shadow-sm ${
+      isEmergency
+        ? 'border-red-300 dark:border-red-800'
+        : 'border-slate-200 dark:border-slate-800'
+    }`}>
+
+      {/* Emergency banner */}
+      {isEmergency && (
+        <div className="bg-red-600 text-white px-5 py-3 text-center font-bold text-sm tracking-wide animate-pulse">
+          🚨 GO TO EMERGENCY ROOM IMMEDIATELY 🚨
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-slate-900 p-5 space-y-4">
+
+        {/* Title + badge */}
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            Routing Result
+          </p>
+          {urgencyLevel && <UrgencyBadge level={urgencyLevel} />}
+        </div>
+
+        {/* Department */}
+        {routedDepartment && (
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <span className="text-3xl">{deptIcon}</span>
+            <div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Department</p>
+              <p className="font-bold text-slate-900 dark:text-white text-base">{routedDepartment}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Recommended action */}
+        {action && (
+          <div className={`flex gap-3 p-4 rounded-xl border ${accent}`}>
+            <span className="text-lg mt-0.5 flex-shrink-0">💡</span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-0.5 opacity-70">Recommended Action</p>
+              <p className="text-sm font-medium">{action}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Wait + slot */}
+        {(estimatedWaitMinutes !== null || nextAvailableSlot) && (
+          <div className="grid grid-cols-2 gap-3">
+            {estimatedWaitMinutes !== null && (
+              <div className="text-center p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Est. Wait</p>
+                <p className="font-bold text-slate-900 dark:text-white text-base">
+                  {estimatedWaitMinutes === 0 ? '⚡ Immediate' : `~${estimatedWaitMinutes} min`}
+                </p>
+              </div>
+            )}
+            {nextAvailableSlot && (
+              <div className="text-center p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Next Slot</p>
+                <p className="font-bold text-slate-900 dark:text-white text-sm">{nextAvailableSlot}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Book appointment */}
+        {!isEmergency && routedDepartment && (
+          <button
+            onClick={() => setShowBooking(true)}
+            disabled={appointmentBooked}
+            className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${
+              appointmentBooked
+                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white'
+            }`}
+          >
+            <span>{appointmentBooked ? '✓' : '📅'}</span>
+            {appointmentBooked ? 'Appointment Booked' : `Book Appointment — ${routedDepartment}`}
+          </button>
+        )}
       </div>
 
-      {isEmergency && (
-        <div className="bg-red-600 text-white rounded-lg p-3 text-center font-bold animate-pulse">
-          🚨 GO TO EMERGENCY ROOM NOW 🚨
-        </div>
-      )}
-
-      {routedDepartment && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-          <span className="text-2xl">{deptIcon}</span>
-          <div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Department</div>
-            <div className="font-semibold text-gray-800">{routedDepartment}</div>
-          </div>
-        </div>
-      )}
-
-      {action && (
-        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Recommended Action</div>
-          <div className="font-medium text-gray-700">{action}</div>
-        </div>
-      )}
-
-      {(estimatedWaitMinutes !== null || nextAvailableSlot) && (
-        <div className="flex gap-3">
-          {estimatedWaitMinutes !== null && (
-            <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-              <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Wait Time</div>
-              <div className="font-bold text-gray-800 text-lg">
-                {estimatedWaitMinutes === 0 ? '⚡ Immediate' : `~${estimatedWaitMinutes} min`}
-              </div>
-            </div>
-          )}
-          {nextAvailableSlot && (
-            <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-              <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Next Slot</div>
-              <div className="font-bold text-gray-800">{nextAvailableSlot}</div>
-            </div>
-          )}
-        </div>
+      {showBooking && routedDepartment && (
+        <BookingModal
+          department={routedDepartment}
+          onClose={() => setShowBooking(false)}
+          onBooked={() => { setAppointmentBooked(); setShowBooking(false) }}
+        />
       )}
     </div>
   )

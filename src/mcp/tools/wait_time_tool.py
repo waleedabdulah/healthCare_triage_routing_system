@@ -17,6 +17,10 @@ BASE_WAIT_TIMES = {
     "Gastroenterology": 45,
     "Pulmonology": 35,
     "Orthopedics": 50,
+    "Ophthalmology": 60,
+    "Gynecology": 45,
+    "Urology": 40,
+    "Psychiatry": 70,
     "General Medicine": 25,
     "Pediatrics": 20,
 }

@@ -47,14 +47,14 @@ export async function sendMessage(
         const event = JSON.parse(data)
 
         if (event.type === 'token') {
-          store.updateStreamingContent(event.content)
+          // Triage result tokens are displayed in the right-panel card, not in the chat.
+          // Discard them here so no duplicate streaming bubble appears in chat.
         } else if (event.type === 'message') {
-          // Clean non-streaming message (e.g. symptom collector response or gibberish rejection)
+          // Conversational message from symptom collector (question / acknowledgment)
           store.finalizeStreamingMessage()
           store.addMessage({ role: 'assistant', content: event.content })
         } else if (event.type === 'triage_complete') {
-          // Finalize any streaming text first
-          store.finalizeStreamingMessage()
+          store.finalizeStreamingMessage()   // clear any residual streaming content
 
           const result: TriageResult = {
             urgencyLevel: event.urgency_level ?? null,
@@ -66,8 +66,8 @@ export async function sendMessage(
           }
           store.setTriageResult(result)
 
-          // Show the final response as a message if not already shown
-          if (event.final_response && !store.messages.find(m => m.content === event.final_response)) {
+          // Only add a chat message for emergencies — the result card handles all other cases.
+          if (event.is_emergency && event.final_response) {
             store.addMessage({ role: 'assistant', content: event.final_response })
           }
         }

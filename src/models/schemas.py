@@ -19,6 +19,10 @@ class Department(str, Enum):
     GASTROENTEROLOGY = "Gastroenterology"
     PULMONOLOGY = "Pulmonology"
     ORTHOPEDICS = "Orthopedics"
+    OPHTHALMOLOGY = "Ophthalmology"
+    GYNECOLOGY = "Gynecology"
+    UROLOGY = "Urology"
+    PSYCHIATRY = "Psychiatry"
     GENERAL_MEDICINE = "General Medicine"
     PEDIATRICS = "Pediatrics"
 
@@ -50,12 +54,13 @@ class SymptomExtraction(BaseModel):
     gender: Optional[str] = None
     red_flags: list[str] = Field(default_factory=list)
     ready_for_triage: bool = False        # True when enough info collected
+    message: Optional[str] = None        # Patient-facing question/response
 
 
 # ── API schemas ───────────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
-    session_id: str
+    session_id: Optional[str] = None
     message: str
     age_group: Optional[str] = None
 

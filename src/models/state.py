@@ -17,6 +17,7 @@ class TriageState(TypedDict):
     symptom_duration: Optional[str]           # e.g. "2 hours", "3 days"
     symptom_severity: Optional[int]           # 1–10 self-reported scale
     red_flags_detected: list[str]             # hard-coded keyword triggers
+    ready_for_triage: Optional[bool]          # LLM signals it has enough info to triage
 
     # ── RAG ───────────────────────────────────────────────────────────────────
     rag_context: list[dict]                   # retrieved chunks + metadata
@@ -37,3 +38,5 @@ class TriageState(TypedDict):
 
     # ── Audit ─────────────────────────────────────────────────────────────────
     audit_written: bool
+    llm_model_used: Optional[str]      # e.g. "llama-3.3-70b-versatile"
+    human_review_flag: bool             # True if escalated for human review

@@ -11,19 +11,25 @@ def route_after_collection(state: TriageState) -> str:
     Proceeds immediately if any hard-coded red flag is detected.
     """
     red_flags = state.get("red_flags_detected", [])
-    symptoms = state.get("extracted_symptoms", [])
+    ready = state.get("ready_for_triage", False)
     turns = state.get("conversation_turns", 0)
 
     # Immediate proceed if emergency red flag found
     if red_flags:
         return "rag_retrieval"
 
-    # Proceed if we have enough symptoms
-    if len(symptoms) >= 2:
+    # LLM explicitly signalled it has enough info (symptoms + duration + severity + age)
+    if ready:
         return "rag_retrieval"
 
-    # Safety guardrail — max 5 turns to prevent infinite loops
-    if turns >= 5:
+    # Safety guardrail — prevent infinite collection loops.
+    # If symptoms have been captured, proceed after 6 turns.
+    # If no symptoms have been captured yet, allow 2 extra turns (up to 8)
+    # so the patient gets another chance rather than silently receiving a
+    # vacuous "General Medicine / NON_URGENT" result with empty context.
+    symptoms = state.get("extracted_symptoms", [])
+    max_turns = 6 if symptoms else 8
+    if turns >= max_turns:
         return "rag_retrieval"
 
     # Ask for more information

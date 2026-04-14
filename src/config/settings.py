@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     # MCP
     mcp_server_script: str = "./src/mcp/server.py"
 
+    # Email / SMTP (optional — leave blank to skip email sending)
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_name: str = "City Hospital Triage"
+    app_base_url: str = "http://localhost:8000"
+
     # CORS
     allowed_origins: str = "http://localhost:5173,http://localhost:3000"
 

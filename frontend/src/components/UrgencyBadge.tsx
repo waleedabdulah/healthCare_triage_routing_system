@@ -1,49 +1,47 @@
-import React from 'react'
 import { UrgencyLevel } from '../store/sessionStore'
 
-interface Props {
-  level: UrgencyLevel
-}
+interface Props { level: UrgencyLevel }
 
-const CONFIG: Record<NonNullable<UrgencyLevel>, { label: string; emoji: string; bg: string; text: string; border: string }> = {
+const CONFIG: Record<NonNullable<UrgencyLevel>, {
+  label: string; dot: string; bg: string; text: string; ring: string
+}> = {
   EMERGENCY: {
     label: 'EMERGENCY',
-    emoji: '🔴',
-    bg: 'bg-red-50',
-    text: 'text-red-700',
-    border: 'border-red-400',
+    dot:  'bg-red-500',
+    bg:   'bg-red-50 dark:bg-red-950/60',
+    text: 'text-red-700 dark:text-red-400',
+    ring: 'ring-red-200 dark:ring-red-900',
   },
   URGENT: {
     label: 'URGENT',
-    emoji: '🟠',
-    bg: 'bg-orange-50',
-    text: 'text-orange-700',
-    border: 'border-orange-400',
+    dot:  'bg-orange-400',
+    bg:   'bg-orange-50 dark:bg-orange-950/60',
+    text: 'text-orange-700 dark:text-orange-400',
+    ring: 'ring-orange-200 dark:ring-orange-900',
   },
   NON_URGENT: {
     label: 'NON-URGENT',
-    emoji: '🟡',
-    bg: 'bg-yellow-50',
-    text: 'text-yellow-700',
-    border: 'border-yellow-400',
+    dot:  'bg-amber-400',
+    bg:   'bg-amber-50 dark:bg-amber-950/60',
+    text: 'text-amber-700 dark:text-amber-400',
+    ring: 'ring-amber-200 dark:ring-amber-900',
   },
   SELF_CARE: {
     label: 'SELF-CARE',
-    emoji: '🟢',
-    bg: 'bg-green-50',
-    text: 'text-green-700',
-    border: 'border-green-400',
+    dot:  'bg-emerald-500',
+    bg:   'bg-emerald-50 dark:bg-emerald-950/60',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    ring: 'ring-emerald-200 dark:ring-emerald-900',
   },
 }
 
 export default function UrgencyBadge({ level }: Props) {
   if (!level) return null
-  const { label, emoji, bg, text, border } = CONFIG[level]
-
+  const { label, dot, bg, text, ring } = CONFIG[level]
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${bg} ${text} ${border} font-bold text-sm`}>
-      <span>{emoji}</span>
-      <span>{label}</span>
-    </div>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide ring-1 ${bg} ${text} ${ring}`}>
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
+      {label}
+    </span>
   )
 }

@@ -25,6 +25,8 @@ interface SessionState {
   triageResult: TriageResult | null
   isLoading: boolean
   streamingContent: string
+  appointmentBooked: boolean        // true once appointment is confirmed this session
+  pendingAppointmentId: string | null  // set after booking created, cleared on confirm
 
   // Actions
   addMessage: (msg: Omit<Message, 'timestamp'>) => void
@@ -32,6 +34,8 @@ interface SessionState {
   finalizeStreamingMessage: () => void
   setTriageResult: (result: TriageResult) => void
   setLoading: (v: boolean) => void
+  setAppointmentBooked: () => void
+  setPendingAppointmentId: (id: string | null) => void
   resetSession: () => void
 }
 
@@ -50,6 +54,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   triageResult: null,
   isLoading: false,
   streamingContent: '',
+  appointmentBooked: false,
+  pendingAppointmentId: null,
 
   addMessage: (msg) =>
     set((state) => ({
@@ -76,6 +82,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   setLoading: (v) => set({ isLoading: v }),
 
+  setAppointmentBooked: () => set({ appointmentBooked: true, pendingAppointmentId: null }),
+
+  setPendingAppointmentId: (id) => set({ pendingAppointmentId: id }),
+
   resetSession: () =>
     set({
       sessionId: uuidv4(),
@@ -83,5 +93,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       triageResult: null,
       isLoading: false,
       streamingContent: '',
+      appointmentBooked: false,
+      pendingAppointmentId: null,
     }),
 }))

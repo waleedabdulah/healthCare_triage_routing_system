@@ -29,6 +29,9 @@ python-dotenv>=1.0.1
 # Numeric (numpy 2.x has Python 3.14 wheels)
 numpy>=2.0.0
 
+# PDF generation
+fpdf2>=2.8.0
+
 # Dev / testing
 pytest>=8.3.3
 pytest-asyncio>=0.24.0

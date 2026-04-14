@@ -9,7 +9,7 @@ def get_engine():
 
 
 def create_db_and_tables():
-    from src.models.db_models import TriageSession  # noqa — registers model
+    from src.models.db_models import TriageSession, Appointment  # noqa — registers models
     SQLModel.metadata.create_all(get_engine())
 
 

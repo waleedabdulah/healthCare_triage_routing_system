@@ -20,6 +20,7 @@ def get_llm():
             model=settings.groq_model,
             temperature=0.1,          # Low temp for consistent triage decisions
             max_tokens=1024,
+            max_retries=5,            # Retry on 429 rate-limit responses
         )
 
     # Ollama fallback

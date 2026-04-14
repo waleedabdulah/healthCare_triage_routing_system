@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config.settings import get_settings
 from src.database.connection import create_db_and_tables
 from src.utils.logging_config import setup_logging
-from src.api.routes import chat, admin, health
+from src.api.routes import chat, admin, health, appointments
 
 setup_logging()
 
@@ -31,6 +31,7 @@ async def on_startup():
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
-app.include_router(chat.router, prefix="/api/v1", tags=["Triage Chat"])
-app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
+app.include_router(chat.router,         prefix="/api/v1", tags=["Triage Chat"])
+app.include_router(admin.router,        prefix="/api/v1", tags=["Admin"])
+app.include_router(appointments.router, prefix="/api/v1", tags=["Appointments"])
 app.include_router(health.router, tags=["Health"])

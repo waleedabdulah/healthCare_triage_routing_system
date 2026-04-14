@@ -1,7 +1,7 @@
-from sqlmodel import Session, select
-from src.models.db_models import TriageSession
+from sqlmodel import Session, select, col
+from src.models.db_models import TriageSession, Appointment
 from src.database.connection import get_engine
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 
 
@@ -52,6 +52,126 @@ def get_recent_sessions(limit: int = 50) -> list[dict]:
             select(TriageSession).order_by(TriageSession.created_at.desc()).limit(limit)
         ).all()
         return [r.model_dump() for r in results]
+
+
+def get_booked_slot_ids() -> set[str]:
+    """Return slot IDs that are already taken (pending or confirmed)."""
+    with Session(get_engine()) as db:
+        rows = db.exec(
+            select(Appointment.slot_id).where(
+                col(Appointment.status).in_(["pending_confirmation", "confirmed"])
+            )
+        ).all()
+        return set(rows)
+
+
+def create_appointment(payload: dict) -> Appointment:
+    """Insert a new appointment record and return it."""
+    record = Appointment(
+        session_id=payload["session_id"],
+        patient_name=payload["patient_name"],
+        patient_email=payload["patient_email"],
+        patient_phone=payload["patient_phone"],
+        department=payload["department"],
+        doctor_id=payload["doctor_id"],
+        doctor_name=payload["doctor_name"],
+        doctor_specialization=payload["doctor_specialization"],
+        slot_id=payload["slot_id"],
+        slot_date=payload["slot_date"],
+        slot_time=payload["slot_time"],
+        slot_label=payload["slot_label"],
+        status="pending_confirmation",
+    )
+    with Session(get_engine()) as db:
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+    return record
+
+
+CONFIRMATION_WINDOW_SECONDS = 15 * 60   # 15 minutes
+
+def confirm_appointment(token: str) -> tuple[Appointment | None, str]:
+    """
+    Mark appointment as confirmed via email token.
+    Returns (appointment, result_code) where result_code is one of:
+      'confirmed'          — just confirmed successfully
+      'already_confirmed'  — was already confirmed (duplicate click)
+      'expired'            — pending but 15-min window has passed
+      'cancelled'          — appointment was cancelled
+      'not_found'          — token not found
+    """
+    with Session(get_engine()) as db:
+        appt = db.exec(
+            select(Appointment).where(Appointment.confirmation_token == token)
+        ).first()
+
+        if not appt:
+            return None, "not_found"
+
+        if appt.status == "confirmed":
+            return appt, "already_confirmed"
+
+        if appt.status == "cancelled":
+            return appt, "cancelled"
+
+        # pending_confirmation — check 15-min window
+        elapsed = (datetime.utcnow() - appt.created_at).total_seconds()
+        if elapsed > CONFIRMATION_WINDOW_SECONDS:
+            return appt, "expired"
+
+        appt.status = "confirmed"
+        db.add(appt)
+        db.commit()
+        db.refresh(appt)
+        return appt, "confirmed"
+
+
+def get_appointment(appointment_id: str) -> Appointment | None:
+    """Fetch a single appointment by ID."""
+    with Session(get_engine()) as db:
+        return db.get(Appointment, appointment_id)
+
+
+def cancel_appointment_by_id(appointment_id: str) -> Appointment | None:
+    """
+    Cancel an appointment. Returns the cancelled Appointment record so
+    the caller can send a cancellation email, or None if not found/already done.
+    """
+    with Session(get_engine()) as db:
+        appt = db.get(Appointment, appointment_id)
+        if appt and appt.status in ("pending_confirmation", "confirmed"):
+            appt.status = "cancelled"
+            db.add(appt)
+            db.commit()
+            db.refresh(appt)
+            return appt
+        return None
+
+
+def get_active_appointment_for_department(patient_email: str, department: str) -> Appointment | None:
+    """
+    Return the most recent active (pending/confirmed) appointment for this
+    patient email + department created within the last 7 days, or None.
+    Email comparison is case-insensitive.
+    """
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    email_lower = patient_email.strip().lower()
+    with Session(get_engine()) as db:
+        results = db.exec(
+            select(Appointment)
+            .where(
+                Appointment.department == department,
+                col(Appointment.status).in_(["pending_confirmation", "confirmed"]),
+                Appointment.created_at >= cutoff,
+            )
+            .order_by(Appointment.created_at.desc())
+        ).all()
+        # Filter case-insensitively in Python (SQLite LIKE is case-insensitive for ASCII only)
+        for appt in results:
+            if appt.patient_email.strip().lower() == email_lower:
+                return appt
+        return None
 
 
 def get_stats() -> dict:

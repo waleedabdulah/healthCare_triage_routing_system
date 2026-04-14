@@ -51,7 +51,7 @@ async def response_composer_node(state: TriageState) -> dict:
         f"DEPARTMENT: {department}\n"
         f"WAIT TIME: {wait_text}\n"
         f"PATIENT SYMPTOMS: {', '.join(symptoms)}\n"
-        f"SELF-REPORTED SEVERITY: {severity}/10 if severity else 'not specified'\n"
+        f"SELF-REPORTED SEVERITY: {f'{severity}/10' if severity else 'not specified'}\n"
         f"AGE GROUP: {age_group}\n\n"
         f"Compose the complete triage result message for the patient now."
     )

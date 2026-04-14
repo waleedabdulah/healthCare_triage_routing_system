@@ -118,13 +118,17 @@ def sanitize_llm_response(text: str) -> str:
     Post-process LLM output to strip any accidentally generated diagnosis language.
     Replaces diagnosis phrases with safe alternatives.
     """
+    # Only replace phrasing that directly attributes a condition to the patient.
+    # Do NOT replace "this is" or "it is" — those phrases appear in the safety
+    # disclaimer ("This is NOT a medical diagnosis") and sanitizing them would
+    # corrupt the message the patient reads.
     diagnosis_replacements = [
         ("you have ", "symptoms suggest "),
         ("you've got ", "symptoms suggest "),
         ("you are suffering from ", "symptoms may indicate the need for evaluation for "),
+        ("you're suffering from ", "symptoms may indicate the need for evaluation for "),
         ("diagnosed with ", "showing symptoms that require evaluation for "),
-        ("it is ", "this may be "),
-        ("this is ", "this may be "),
+        ("you've been diagnosed", "symptoms require evaluation"),
     ]
     result = text
     for bad, good in diagnosis_replacements:
