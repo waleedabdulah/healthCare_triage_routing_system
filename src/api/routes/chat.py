@@ -46,12 +46,18 @@ async def _run_pass(graph, config: dict, input_data, triage_only: bool = False):
 
             if name == "collect_symptoms" and not triage_only:
                 output = event.get("data", {}).get("output", {}) or {}
-                msgs = output.get("messages", [])
-                if msgs:
-                    last = msgs[-1]
-                    content = last.content if hasattr(last, "content") else str(last)
-                    if content:
-                        yield f"data: {json.dumps({'type': 'message', 'content': content})}\n\n"
+                # Suppress the collect_symptoms message when triage is firing
+                # immediately — the LLM reply at that turn is just the internal
+                # "ready" marker, not a real patient-facing question.
+                if output.get("ready_for_triage"):
+                    pass
+                else:
+                    msgs = output.get("messages", [])
+                    if msgs:
+                        last = msgs[-1]
+                        content = last.content if hasattr(last, "content") else str(last)
+                        if content:
+                            yield f"data: {json.dumps({'type': 'message', 'content': content})}\n\n"
 
             elif name in ("compose_response", "emergency_node"):
                 triage_completed = True

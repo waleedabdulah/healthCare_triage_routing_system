@@ -27,7 +27,7 @@ function useDarkMode() {
 /* ── App ─────────────────────────────────────────────────────── */
 export default function App() {
   const { dark, toggle } = useDarkMode()
-  const { triageResult, resetSession } = useSessionStore()
+  const { triageResult, resetSession, appointmentBooked } = useSessionStore()
   const [activeTab, setActiveTab] = useState<'chat' | 'result'>('chat')
 
   // Auto-switch to result tab on mobile when triage completes
@@ -167,16 +167,18 @@ export default function App() {
 
               <RoutingCard result={triageResult} />
 
-              {/* At reception */}
-              <div className="flex gap-3 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900 rounded-xl p-4">
-                <span className="text-xl flex-shrink-0">📋</span>
-                <div>
-                  <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-0.5">At Reception</p>
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400 leading-relaxed">
-                    Present the <strong>PDF receipt</strong> sent to your email when you booked the appointment. The reception desk will verify it and direct you to the correct department.
-                  </p>
+              {/* At reception — only shown after appointment is booked */}
+              {appointmentBooked && (
+                <div className="flex gap-3 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900 rounded-xl p-4">
+                  <span className="text-xl flex-shrink-0">📋</span>
+                  <div>
+                    <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-0.5">At Reception</p>
+                    <p className="text-sm text-indigo-600 dark:text-indigo-400 leading-relaxed">
+                      Present the <strong>PDF receipt</strong> sent to your email when you booked the appointment. The reception desk will verify it and direct you to the correct department.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Emergency note */}
               <div className="flex gap-3 bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900 rounded-xl p-4">
