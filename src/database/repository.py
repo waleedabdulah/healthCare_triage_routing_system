@@ -1,5 +1,5 @@
 from sqlmodel import Session, select, col
-from src.models.db_models import TriageSession, Appointment
+from src.models.db_models import TriageSession, Appointment, NurseUser
 from src.database.connection import get_engine
 from datetime import datetime, timedelta
 import uuid
@@ -172,6 +172,160 @@ def get_active_appointment_for_department(patient_email: str, department: str) -
             if appt.patient_email.strip().lower() == email_lower:
                 return appt
         return None
+
+
+# ── Nurse / Auth ──────────────────────────────────────────────────────────────
+
+def create_nurse_user(email: str, password_hash: str, full_name: str,
+                      department: str | None = None, role: str = "nurse") -> NurseUser:
+    """Insert a new nurse/admin user. Returns the created record."""
+    user = NurseUser(
+        email=email.strip().lower(),
+        password_hash=password_hash,
+        full_name=full_name,
+        department=department,
+        role=role,
+    )
+    with Session(get_engine()) as db:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
+def get_nurse_by_email(email: str) -> NurseUser | None:
+    """Fetch a nurse user by email (case-insensitive)."""
+    with Session(get_engine()) as db:
+        return db.exec(
+            select(NurseUser).where(NurseUser.email == email.strip().lower())
+        ).first()
+
+
+def get_nurse_by_id(user_id: str) -> NurseUser | None:
+    """Fetch a nurse user by ID."""
+    with Session(get_engine()) as db:
+        return db.get(NurseUser, user_id)
+
+
+def count_nurse_users() -> int:
+    """Return total number of nurse users (used to decide whether to seed)."""
+    with Session(get_engine()) as db:
+        return len(db.exec(select(NurseUser)).all())
+
+
+# ── Admin appointments query ───────────────────────────────────────────────────
+
+def bulk_cancel_appointments(
+    department: str | None = None,
+    doctor: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    target_status: str | None = None,   # None = cancel both pending+confirmed
+) -> list[dict]:
+    """
+    Cancel all appointments matching the filters.
+    Returns list of dicts for each cancelled record so the caller can send emails.
+    Only cancels pending_confirmation and/or confirmed records (never re-cancels).
+    """
+    with Session(get_engine()) as db:
+        stmt = select(Appointment).order_by(Appointment.slot_date.asc())
+
+        conditions = []
+        if target_status and target_status != "all":
+            conditions.append(Appointment.status == target_status)
+        else:
+            conditions.append(col(Appointment.status).in_(["pending_confirmation", "confirmed"]))
+
+        if department:
+            conditions.append(Appointment.department == department)
+        if date_from:
+            conditions.append(Appointment.slot_date >= date_from)
+        if date_to:
+            conditions.append(Appointment.slot_date <= date_to)
+
+        stmt = stmt.where(*conditions)
+        rows = db.exec(stmt).all()
+
+        # Apply doctor partial-match in Python
+        if doctor:
+            doctor_lower = doctor.strip().lower()
+            rows = [r for r in rows if doctor_lower in r.doctor_name.lower()]
+
+        cancelled = []
+        for appt in rows:
+            appt.status = "cancelled"
+            db.add(appt)
+            cancelled.append({
+                "appointment_id":      appt.id,
+                "patient_name":        appt.patient_name,
+                "patient_email":       appt.patient_email,
+                "patient_phone":       appt.patient_phone,
+                "department":          appt.department,
+                "doctor_name":         appt.doctor_name,
+                "doctor_specialization": appt.doctor_specialization,
+                "slot_label":          appt.slot_label,
+                "confirmation_code":   appt.confirmation_code,
+            })
+
+        db.commit()
+        return cancelled
+
+
+def get_appointments_filtered(
+    department: str | None = None,
+    status: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    doctor: str | None = None,
+    limit: int = 200,
+) -> list[dict]:
+    """
+    Fetch appointments with optional filters.
+    - department: exact match (e.g. "Cardiology")
+    - status: "pending_confirmation" | "confirmed" | "cancelled" | None (all)
+    - date_from / date_to: ISO date strings "YYYY-MM-DD" range on slot_date (inclusive)
+    - doctor: partial case-insensitive match on doctor_name
+    """
+    with Session(get_engine()) as db:
+        stmt = select(Appointment).order_by(Appointment.slot_date.asc(), Appointment.slot_time.asc()).limit(limit)
+
+        conditions = []
+        if department:
+            conditions.append(Appointment.department == department)
+        if status and status != "all":
+            conditions.append(Appointment.status == status)
+        if date_from:
+            conditions.append(Appointment.slot_date >= date_from)
+        if date_to:
+            conditions.append(Appointment.slot_date <= date_to)
+
+        if conditions:
+            stmt = stmt.where(*conditions)
+
+        results = db.exec(stmt).all()
+
+        # Apply doctor filter in Python (case-insensitive partial match)
+        if doctor:
+            doctor_lower = doctor.strip().lower()
+            results = [r for r in results if doctor_lower in r.doctor_name.lower()]
+
+        return [
+            {
+                "appointment_id": r.id,
+                "patient_name": r.patient_name,
+                "patient_phone": r.patient_phone,
+                "department": r.department,
+                "doctor_name": r.doctor_name,
+                "doctor_specialization": r.doctor_specialization,
+                "slot_label": r.slot_label,
+                "slot_date": r.slot_date,
+                "slot_time": r.slot_time,
+                "status": r.status,
+                "confirmation_code": r.confirmation_code,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in results
+        ]
 
 
 def get_stats() -> dict:

@@ -13,8 +13,6 @@ export interface Message {
 export interface TriageResult {
   urgencyLevel: UrgencyLevel
   routedDepartment: string | null
-  estimatedWaitMinutes: number | null
-  nextAvailableSlot: string | null
   isEmergency: boolean
   finalResponse: string | null
 }
@@ -42,8 +40,6 @@ interface SessionState {
 const defaultResult: TriageResult = {
   urgencyLevel: null,
   routedDepartment: null,
-  estimatedWaitMinutes: null,
-  nextAvailableSlot: null,
   isEmergency: false,
   finalResponse: null,
 }

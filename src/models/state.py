@@ -29,10 +29,6 @@ class TriageState(TypedDict):
     routed_department: Optional[str]          # "Cardiology", "ER", "ENT", etc.
     routing_reasoning: Optional[str]
 
-    # ── Wait time (from MCP) ──────────────────────────────────────────────────
-    estimated_wait_minutes: Optional[int]
-    next_available_slot: Optional[str]
-
     # ── Output ────────────────────────────────────────────────────────────────
     final_response: Optional[str]
 

@@ -14,20 +14,11 @@ URGENCY_EMOJI = {
     "SELF_CARE": "🟢",
 }
 
-WAIT_TIME_TEXT = {
-    "EMERGENCY": "⚡ Immediate — go now",
-    "URGENT": "30–90 minutes (same day)",
-    "NON_URGENT": "2–6 hours or next available slot",
-    "SELF_CARE": "No wait — home care recommended",
-}
-
 
 async def response_composer_node(state: TriageState) -> dict:
     """Compose the final patient-facing triage result message."""
     urgency = state.get("urgency_level", "NON_URGENT")
     department = state.get("routed_department", "General Medicine")
-    wait_minutes = state.get("estimated_wait_minutes")
-    next_slot = state.get("next_available_slot", "Next available")
     symptoms = state.get("extracted_symptoms", [])
     severity = state.get("symptom_severity")
     age_group = state.get("patient_age_group", "adult")
@@ -38,18 +29,10 @@ async def response_composer_node(state: TriageState) -> dict:
 
     emoji = URGENCY_EMOJI.get(urgency, "🟡")
 
-    if wait_minutes is not None and wait_minutes > 0:
-        wait_text = f"~{wait_minutes} minutes | Next slot: {next_slot}"
-    elif urgency == "EMERGENCY":
-        wait_text = "⚡ Immediate"
-    else:
-        wait_text = WAIT_TIME_TEXT.get(urgency, "See reception for timing")
-
     prompt = (
         f"URGENCY: {urgency}\n"
         f"EMOJI: {emoji}\n"
         f"DEPARTMENT: {department}\n"
-        f"WAIT TIME: {wait_text}\n"
         f"PATIENT SYMPTOMS: {', '.join(symptoms)}\n"
         f"SELF-REPORTED SEVERITY: {f'{severity}/10' if severity else 'not specified'}\n"
         f"AGE GROUP: {age_group}\n\n"
@@ -66,7 +49,7 @@ async def response_composer_node(state: TriageState) -> dict:
 
     except Exception as e:
         logger.error(f"response_composer error: {e} — using fallback template")
-        message = _fallback_response(urgency, emoji, department, wait_text)
+        message = _fallback_response(urgency, emoji, department)
 
     return {
         "messages": [AIMessage(content=message)],
@@ -74,7 +57,7 @@ async def response_composer_node(state: TriageState) -> dict:
     }
 
 
-def _fallback_response(urgency: str, emoji: str, department: str, wait_text: str) -> str:
+def _fallback_response(urgency: str, emoji: str, department: str) -> str:
     action_map = {
         "EMERGENCY": "Go to the Emergency Room immediately.",
         "URGENT": "Visit the OPD today for urgent consultation.",
@@ -86,8 +69,6 @@ def _fallback_response(urgency: str, emoji: str, department: str, wait_text: str
         f"**Urgency Level:** {emoji} {urgency}\n"
         f"**Recommended Action:** {action_map.get(urgency, 'See a doctor.')}\n"
         f"**Department:** {department}\n\n"
-        f"### ⏱ Estimated Wait Time\n{wait_text}\n\n"
-        f"### ⚠️ Safety Note\nIf your condition worsens, seek immediate medical attention.\n\n"
         f"### 📍 Your Next Step\nProceed to {department}.\n\n"
         f"---\n*This is NOT a medical diagnosis. This is an automated triage routing tool.*"
     )

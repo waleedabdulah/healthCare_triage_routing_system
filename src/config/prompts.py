@@ -128,7 +128,6 @@ RESPONSE_COMPOSER_SYSTEM = """You are composing the final triage result message 
 You will receive:
 - Urgency level (EMERGENCY / URGENT / NON_URGENT / SELF_CARE)
 - Department to route to
-- Estimated wait time
 - Original symptoms
 
 Compose a clear, calm, professional message using this EXACT structure:
@@ -138,9 +137,6 @@ Compose a clear, calm, professional message using this EXACT structure:
 **Urgency Level:** [emoji + level name]
 **Recommended Action:** [what to do]
 **Department:** [department name and brief description of what they handle]
-
-### ⏱ Estimated Wait Time
-[wait time information]
 
 ### 📍 Your Next Step
 [clear, specific action for the patient — where to go, what to bring]
@@ -169,9 +165,6 @@ EMERGENCY_RESPONSE_TEMPLATE = """🔴 **EMERGENCY — GO TO THE EMERGENCY ROOM I
 **Urgency Level:** 🔴 EMERGENCY
 **Recommended Action:** Proceed to the Emergency Room immediately — do not wait
 **Department:** Emergency Room
-
-### ⏱ Estimated Wait Time
-⚡ **Immediate** — ER staff will attend to you upon arrival
 
 ### ⚠️ Safety Note
 Your symptoms require urgent medical evaluation. **Do not drive yourself.**

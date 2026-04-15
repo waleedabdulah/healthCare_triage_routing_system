@@ -12,7 +12,6 @@ from src.graph.nodes.urgency_assessor import urgency_assessor_node
 from src.graph.nodes.emergency_node import emergency_escalation_node
 from src.graph.nodes.escalation_node import escalation_node
 from src.graph.nodes.department_router import department_routing_node
-from src.graph.nodes.wait_time_node import wait_time_node
 from src.graph.nodes.response_composer import response_composer_node
 from src.graph.nodes.audit_node import audit_node
 from src.graph.edges import route_after_collection, route_after_urgency
@@ -32,7 +31,6 @@ def build_graph():
     graph.add_node("emergency_node", emergency_escalation_node)
     graph.add_node("escalation_node", escalation_node)
     graph.add_node("department_routing", department_routing_node)
-    graph.add_node("fetch_wait_times", wait_time_node)
     graph.add_node("compose_response", response_composer_node)
     graph.add_node("audit_log", audit_node)
 
@@ -42,10 +40,9 @@ def build_graph():
     # ── Fixed edges ───────────────────────────────────────────────────────────
     graph.add_edge("start_session", "collect_symptoms")
     graph.add_edge("rag_retrieval", "urgency_assessment")
-    graph.add_edge("emergency_node", "fetch_wait_times")
+    graph.add_edge("emergency_node", "compose_response")
     graph.add_edge("escalation_node", "department_routing")
-    graph.add_edge("department_routing", "fetch_wait_times")
-    graph.add_edge("fetch_wait_times", "compose_response")
+    graph.add_edge("department_routing", "compose_response")
     graph.add_edge("compose_response", "audit_log")
     graph.add_edge("audit_log", END)
 

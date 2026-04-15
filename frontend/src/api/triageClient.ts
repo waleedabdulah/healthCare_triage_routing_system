@@ -59,8 +59,6 @@ export async function sendMessage(
           const result: TriageResult = {
             urgencyLevel: event.urgency_level ?? null,
             routedDepartment: event.routed_department ?? null,
-            estimatedWaitMinutes: event.estimated_wait_minutes ?? null,
-            nextAvailableSlot: event.next_available_slot ?? null,
             isEmergency: event.is_emergency ?? false,
             finalResponse: event.final_response ?? null,
           }

@@ -29,8 +29,12 @@ class Settings(BaseSettings):
     smtp_from_name: str = "City Hospital Triage"
     app_base_url: str = "http://localhost:8000"
 
+    # Auth (JWT)
+    jwt_secret: str = "change-me-in-production-use-a-long-random-string"
+    jwt_expire_minutes: int = 480   # 8 hours
+
     # CORS
-    allowed_origins: str = "http://localhost:5173,http://localhost:3000"
+    allowed_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:5174"
 
     @property
     def allowed_origins_list(self) -> list[str]:

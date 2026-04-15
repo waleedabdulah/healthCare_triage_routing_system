@@ -38,7 +38,7 @@ const URGENCY_ACCENT: Record<string, { light: string; dark: string }> = {
 }
 
 export default function RoutingCard({ result }: Props) {
-  const { urgencyLevel, routedDepartment, estimatedWaitMinutes, nextAvailableSlot, isEmergency } = result
+  const { urgencyLevel, routedDepartment, isEmergency } = result
   const deptIcon = routedDepartment ? (DEPT_ICONS[routedDepartment] ?? '🏥') : '🏥'
   const action   = urgencyLevel ? (URGENCY_ACTION[urgencyLevel] ?? '') : ''
   const accent   = urgencyLevel && URGENCY_ACCENT[urgencyLevel]
@@ -109,26 +109,6 @@ export default function RoutingCard({ result }: Props) {
               <p className="text-xs font-semibold uppercase tracking-wider mb-0.5 opacity-70">Recommended Action</p>
               <p className="text-sm font-medium">{action}</p>
             </div>
-          </div>
-        )}
-
-        {/* Wait + slot */}
-        {(estimatedWaitMinutes !== null || nextAvailableSlot) && (
-          <div className="grid grid-cols-2 gap-3">
-            {estimatedWaitMinutes !== null && (
-              <div className="text-center p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Est. Wait</p>
-                <p className="font-bold text-slate-900 dark:text-white text-base">
-                  {estimatedWaitMinutes === 0 ? '⚡ Immediate' : `~${estimatedWaitMinutes} min`}
-                </p>
-              </div>
-            )}
-            {nextAvailableSlot && (
-              <div className="text-center p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Next Slot</p>
-                <p className="font-bold text-slate-900 dark:text-white text-sm">{nextAvailableSlot}</p>
-              </div>
-            )}
           </div>
         )}
 

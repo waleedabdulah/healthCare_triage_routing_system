@@ -123,8 +123,6 @@ async def _stream_graph(session_id: str, message: str, age_group: str | None):
                     "session_id": session_id,
                     "urgency_level": sv.get("urgency_level"),
                     "routed_department": sv.get("routed_department"),
-                    "estimated_wait_minutes": sv.get("estimated_wait_minutes"),
-                    "next_available_slot": sv.get("next_available_slot"),
                     "final_response": sv.get("final_response"),
                     "is_emergency": sv.get("urgency_level") == "EMERGENCY",
                 }
@@ -168,7 +166,6 @@ async def get_session(session_id: str):
                 "session_id": session_id,
                 "urgency_level": sv.get("urgency_level"),
                 "routed_department": sv.get("routed_department"),
-                "estimated_wait_minutes": sv.get("estimated_wait_minutes"),
                 "conversation_turns": sv.get("conversation_turns", 0),
                 "audit_written": sv.get("audit_written", False),
             }
