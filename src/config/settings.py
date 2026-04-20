@@ -6,9 +6,6 @@ class Settings(BaseSettings):
     # LLM
     groq_api_key: str = ""
     groq_model: str = "llama-3.1-8b-instant"
-    use_ollama: bool = False
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.2"
 
     # App
     app_env: str = "development"
@@ -39,10 +36,6 @@ class Settings(BaseSettings):
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
-
-    @property
-    def use_groq(self) -> bool:
-        return bool(self.groq_api_key) and not self.use_ollama
 
     class Config:
         env_file = ".env"

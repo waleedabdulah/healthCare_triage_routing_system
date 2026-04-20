@@ -15,9 +15,11 @@ class TriageState(TypedDict):
     # ── Extracted symptoms ────────────────────────────────────────────────────
     extracted_symptoms: list[str]             # e.g. ["chest pain", "shortness of breath"]
     symptom_duration: Optional[str]           # e.g. "2 hours", "3 days"
-    symptom_severity: Optional[int]           # 1–10 self-reported scale
+    symptom_severity: Optional[int]           # reserved for future use
+    symptom_impact: Optional[str]             # patient's descriptive impact selections from checkbox form
     red_flags_detected: list[str]             # hard-coded keyword triggers
     ready_for_triage: Optional[bool]          # LLM signals it has enough info to triage
+    pending_options: Optional[dict]           # checkbox form payload waiting for patient response
 
     # ── RAG ───────────────────────────────────────────────────────────────────
     rag_context: list[dict]                   # retrieved chunks + metadata

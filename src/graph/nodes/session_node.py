@@ -27,4 +27,6 @@ def start_session_node(state: TriageState) -> dict:
         "final_response": None,
         "symptom_duration": None,
         "symptom_severity": None,
+        "symptom_impact": None,
+        "pending_options": None,
     }

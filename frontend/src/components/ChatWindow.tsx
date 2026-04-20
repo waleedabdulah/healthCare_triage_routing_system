@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useSessionStore } from '../store/sessionStore'
 import { sendMessage } from '../api/triageClient'
 import MessageBubble from './MessageBubble'
+import SymptomOptionsForm from './SymptomOptionsForm'
 
 const AGE_GROUPS = [
   { label: 'Child (< 16)',   value: 'child',   icon: '🧒' },
@@ -24,6 +25,7 @@ export default function ChatWindow() {
     streamingContent,
     isLoading,
     triageResult,
+    pendingOptions,
     addMessage,
     resetSession,
   } = useSessionStore()
@@ -191,6 +193,15 @@ export default function ChatWindow() {
           />
         )}
 
+        {/* ── Severity checkbox form ───────────────────────────── */}
+        {pendingOptions && (
+          <SymptomOptionsForm
+            payload={pendingOptions}
+            sessionId={sessionId}
+            ageGroup={selectedAgeGroup}
+          />
+        )}
+
         {/* ── Typing indicator ─────────────────────────────────── */}
         {isLoading && !streamingContent && (
           <div className="flex items-end gap-2 mb-2">
@@ -234,20 +245,22 @@ export default function ChatWindow() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isLoading || isComplete}
+            disabled={isLoading || isComplete || !!pendingOptions}
             placeholder={
               isComplete
                 ? 'Triage complete — start a new session above'
-                : needsAgeGroup && !hasPatientSentMsg
-                  ? 'Select your age group above to begin…'
-                  : 'Describe your symptoms…'
+                : pendingOptions
+                  ? 'Please complete the form above…'
+                  : needsAgeGroup && !hasPatientSentMsg
+                    ? 'Select your age group above to begin…'
+                    : 'Describe your symptoms…'
             }
             rows={2}
             className="flex-1 resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-600 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           />
           <button
             onClick={handleSend}
-            disabled={isLoading || !input.trim() || isComplete}
+            disabled={isLoading || !input.trim() || isComplete || !!pendingOptions}
             aria-label="Send"
             className="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-sm"
           >

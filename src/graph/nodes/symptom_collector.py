@@ -9,6 +9,29 @@ import re
 
 logger = logging.getLogger(__name__)
 
+# ── Severity checkbox options ─────────────────────────────────────────────────
+SEVERITY_OPTIONS = [
+    "My symptoms are constant (not coming and going)",
+    "My symptoms are getting worse",
+    "I cannot carry out my normal daily activities",
+    "I am unable to sleep due to my symptoms",
+    "The symptoms started suddenly (within the last few hours)",
+    "I have tried medication but it has not helped",
+    "None of the above — symptoms are mild and manageable",
+]
+
+SEVERITY_OPTIONS_PAYLOAD = {
+    "question": "To help us understand how this is affecting you, please select all that apply:",
+    "options": SEVERITY_OPTIONS,
+    "multi_select": True,
+}
+
+
+def _is_options_response(message: str) -> bool:
+    """Check if the patient message is a submitted options form response."""
+    return any(opt.lower() in message.lower() for opt in SEVERITY_OPTIONS)
+
+
 # Phrases that mean "I have no more symptoms to report"
 _NO_MORE_SYMPTOMS_PATTERNS = re.compile(
     r'\b(nope|no+|nothing|nah|none|that\'?s?\s*(all|it)|no\s*(more|other|else|additional)|'
@@ -58,6 +81,40 @@ async def symptom_collector_node(state: TriageState) -> dict:
                 "Could you please describe your symptoms in a few words? "
                 "For example: \"I have a headache and fever\" or \"my chest hurts\"."
             ))],
+            "conversation_turns": state.get("conversation_turns", 0) + 1,
+            "red_flags_detected": new_red_flags,
+        }
+
+    # ── Options response: patient submitted the severity checkbox form ────────
+    if latest_human and _is_options_response(latest_human.content):
+        logger.info("Options response received — storing impact, proceeding to triage")
+        return {
+            "messages": [AIMessage(content=(
+                "Thank you for completing the assessment.\n\n"
+                "We now have everything we need to find the right care for you. "
+                "Our system is reviewing your symptoms and will route you to the most "
+                "appropriate department in just a moment.\n\n"
+                "Please hold on…"
+            ))],
+            "symptom_impact": latest_human.content,   # passed to urgency assessor LLM
+            "pending_options": None,
+            "conversation_turns": state.get("conversation_turns", 0) + 1,
+            "red_flags_detected": new_red_flags,
+            "ready_for_triage": True,
+        }
+
+    # ── Show severity checkbox form when symptoms + duration are known ────────
+    existing_symptoms = list(state.get("extracted_symptoms", []))
+    if (
+        existing_symptoms
+        and state.get("symptom_duration")
+        and not state.get("symptom_impact")    # not already submitted
+        and not state.get("pending_options")   # not already showing
+        and not new_red_flags                  # emergencies skip the form
+    ):
+        logger.info("Symptoms + duration collected — sending severity options form")
+        return {
+            "pending_options": SEVERITY_OPTIONS_PAYLOAD,
             "conversation_turns": state.get("conversation_turns", 0) + 1,
             "red_flags_detected": new_red_flags,
         }

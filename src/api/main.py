@@ -31,6 +31,14 @@ app.add_middleware(
 async def on_startup():
     create_db_and_tables()
     _seed_default_admin()
+    from src.mcp.client import get_mcp_client
+    await get_mcp_client().start()
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    from src.mcp.client import get_mcp_client
+    await get_mcp_client().stop()
 
 
 def _seed_default_admin():

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def _build_urgency_prompt(state: TriageState) -> str:
     symptoms = state.get("extracted_symptoms", [])
     duration = state.get("symptom_duration", "unknown")
-    severity = state.get("symptom_severity")
+    impact = state.get("symptom_impact")
     age_group = state.get("patient_age_group", "unknown")
     red_flags = state.get("red_flags_detected", [])
     rag_context = state.get("rag_context", [])
@@ -24,13 +24,13 @@ def _build_urgency_prompt(state: TriageState) -> str:
             text = chunk.get('text', '')[:600]
             rag_text += f"- {text}\n"
 
-    severity_text = f"{severity}/10" if severity else "not specified"
+    impact_text = impact if impact else "not assessed"
 
     return (
         f"PATIENT SYMPTOMS:\n"
         f"- Symptoms: {', '.join(symptoms) if symptoms else 'not specified'}\n"
         f"- Duration: {duration}\n"
-        f"- Self-reported severity: {severity_text}\n"
+        f"- Impact on daily life (patient-reported): {impact_text}\n"
         f"- Age group: {age_group}\n"
         f"- Hard-coded red flags detected: {', '.join(red_flags) if red_flags else 'none'}\n"
         f"{rag_text}\n"

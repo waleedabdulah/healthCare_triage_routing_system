@@ -14,6 +14,16 @@ logger = logging.getLogger(__name__)
 
 def _should_proceed_to_triage(sv: dict) -> bool:
     """Mirror route_after_collection logic to decide if triage pipeline should run now."""
+    # Never proceed while waiting for the patient to complete the checkbox form
+    if sv.get("pending_options"):
+        return False
+    # Block triage while the impact checklist hasn't been shown/completed yet.
+    # Emergencies (red_flags_detected) skip the checklist entirely.
+    if (sv.get("extracted_symptoms")
+            and sv.get("symptom_duration")
+            and not sv.get("symptom_impact")
+            and not sv.get("red_flags_detected")):
+        return False
     return bool(
         sv.get("red_flags_detected")
         or sv.get("ready_for_triage")
@@ -46,11 +56,19 @@ async def _run_pass(graph, config: dict, input_data, triage_only: bool = False):
 
             if name == "collect_symptoms" and not triage_only:
                 output = event.get("data", {}).get("output", {}) or {}
-                # Suppress the collect_symptoms message when triage is firing
-                # immediately — the LLM reply at that turn is just the internal
-                # "ready" marker, not a real patient-facing question.
                 if output.get("ready_for_triage"):
-                    pass
+                    # Show the farewell/routing message (e.g. after checklist submission)
+                    # before the triage pipeline fires.
+                    msgs = output.get("messages", [])
+                    if msgs:
+                        last = msgs[-1]
+                        content = last.content if hasattr(last, "content") else str(last)
+                        if content:
+                            yield f"data: {json.dumps({'type': 'message', 'content': content})}\n\n"
+                elif output.get("pending_options"):
+                    # Severity checkbox form — send as options event, not a text message
+                    opts = output["pending_options"]
+                    yield f"data: {json.dumps({'type': 'options', 'question': opts['question'], 'options': opts['options'], 'multi_select': opts['multi_select']})}\n\n"
                 else:
                     msgs = output.get("messages", [])
                     if msgs:
@@ -75,20 +93,39 @@ async def _stream_graph(session_id: str, message: str, age_group: str | None):
     ready_for_triage (or the turn guardrail fires), we immediately resume the
     graph in a second astream_events pass so the triage result arrives in the
     same HTTP response — no extra user message needed.
+
+    IMPORTANT: passing a non-None dict to astream_events on an interrupted graph
+    restarts execution from the entry point (start_session), wiping symptom_duration
+    and other fields.  For turns 2+, we must use update_state() to inject the new
+    message and then resume with None so the graph continues from after collect_symptoms.
     """
     graph = get_compiled_graph()
     config = {"configurable": {"thread_id": session_id}}
 
-    initial_input = {
-        "messages": [HumanMessage(content=message)],
-        "session_id": session_id,
-        "patient_age_group": age_group,
-    }
+    # Detect whether this session already has an initialised checkpoint.
+    try:
+        snapshot = graph.get_state(config)
+        is_fresh = not snapshot or not snapshot.values.get("session_id")
+    except Exception:
+        is_fresh = True
+
+    if is_fresh:
+        # First turn — start the graph from scratch.
+        input_data = {
+            "messages": [HumanMessage(content=message)],
+            "session_id": session_id,
+            "patient_age_group": age_group,
+        }
+    else:
+        # Subsequent turns — add the new message and resume from the interrupt.
+        # Passing a dict here would restart from start_session, wiping all state.
+        graph.update_state(config, {"messages": [HumanMessage(content=message)]})
+        input_data = None
 
     triage_completed = False
 
     # ── Pass 1: collect_symptoms turn ────────────────────────────────────────
-    async for item in _run_pass(graph, config, initial_input, triage_only=False):
+    async for item in _run_pass(graph, config, input_data, triage_only=False):
         if isinstance(item, dict) and "__triage_completed__" in item:
             triage_completed = item["__triage_completed__"]
         else:

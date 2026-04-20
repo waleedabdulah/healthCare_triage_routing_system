@@ -1,38 +1,30 @@
 """
-LLM client factory — Groq (primary) with Ollama fallback.
-Both expose the same langchain ChatModel interface.
+LLM client factory — Groq via ChatGroq (langchain_groq).
+Requires GROQ_API_KEY in .env. Raises clearly if not configured.
 """
 from functools import lru_cache
 from langchain_groq import ChatGroq
-from langchain_community.llms import Ollama
-from langchain_community.chat_models import ChatOllama
 from src.config.settings import get_settings
 
 
 @lru_cache()
 def get_llm():
-    """Return the configured chat model (Groq or Ollama)."""
+    """Return the Groq chat model. Raises if GROQ_API_KEY is not set."""
     settings = get_settings()
 
-    if settings.use_groq:
-        return ChatGroq(
-            api_key=settings.groq_api_key,
-            model=settings.groq_model,
-            temperature=0.1,          # Low temp for consistent triage decisions
-            max_tokens=1024,
-            max_retries=5,            # Retry on 429 rate-limit responses
+    if not settings.groq_api_key:
+        raise RuntimeError(
+            "GROQ_API_KEY is not set. Add it to your .env file."
         )
 
-    # Ollama fallback
-    return ChatOllama(
-        base_url=settings.ollama_base_url,
-        model=settings.ollama_model,
-        temperature=0.1,
+    return ChatGroq(
+        api_key=settings.groq_api_key,
+        model=settings.groq_model,
+        temperature=0.1,      # Low temp for consistent triage decisions
+        max_tokens=1024,
+        max_retries=5,        # Retry on 429 rate-limit responses
     )
 
 
 def get_model_name() -> str:
-    settings = get_settings()
-    if settings.use_groq:
-        return settings.groq_model
-    return settings.ollama_model
+    return get_settings().groq_model

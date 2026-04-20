@@ -10,7 +10,5 @@ def emergency_escalation_node(state: TriageState) -> dict:
     return {
         "routed_department": "Emergency Room",
         "routing_reasoning": "Emergency symptoms detected — immediate ER routing",
-        "estimated_wait_minutes": 0,
-        "next_available_slot": "Immediate",
         "final_response": EMERGENCY_RESPONSE_TEMPLATE,
     }

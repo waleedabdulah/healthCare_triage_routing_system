@@ -1,4 +1,17 @@
 import axios from 'axios'
+import { useAuthStore } from '../store/authStore'
+
+// Global 401 interceptor — clears auth and redirects to login on token expiry
+axios.interceptors.response.use(
+  res => res,
+  err => {
+    if (err?.response?.status === 401) {
+      useAuthStore.getState().logout()
+      window.location.replace('/login')
+    }
+    return Promise.reject(err)
+  }
+)
 
 function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}` }

@@ -49,6 +49,13 @@ export async function sendMessage(
         if (event.type === 'token') {
           // Triage result tokens are displayed in the right-panel card, not in the chat.
           // Discard them here so no duplicate streaming bubble appears in chat.
+        } else if (event.type === 'options') {
+          // Severity checkbox form sent by backend — render in chat UI
+          store.setPendingOptions({
+            question: event.question,
+            options: event.options,
+            multi_select: event.multi_select,
+          })
         } else if (event.type === 'message') {
           // Conversational message from symptom collector (question / acknowledgment)
           store.finalizeStreamingMessage()

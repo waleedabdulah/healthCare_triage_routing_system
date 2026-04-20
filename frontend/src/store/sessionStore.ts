@@ -3,6 +3,12 @@ import { v4 as uuidv4 } from 'uuid'
 
 export type UrgencyLevel = 'EMERGENCY' | 'URGENT' | 'NON_URGENT' | 'SELF_CARE' | null
 
+export interface OptionsPayload {
+  question: string
+  options: string[]
+  multi_select: boolean
+}
+
 export interface Message {
   role: 'patient' | 'assistant'
   content: string
@@ -25,6 +31,7 @@ interface SessionState {
   streamingContent: string
   appointmentBooked: boolean        // true once appointment is confirmed this session
   pendingAppointmentId: string | null  // set after booking created, cleared on confirm
+  pendingOptions: OptionsPayload | null  // set when severity checkbox form is active
 
   // Actions
   addMessage: (msg: Omit<Message, 'timestamp'>) => void
@@ -34,6 +41,7 @@ interface SessionState {
   setLoading: (v: boolean) => void
   setAppointmentBooked: () => void
   setPendingAppointmentId: (id: string | null) => void
+  setPendingOptions: (opts: OptionsPayload | null) => void
   resetSession: () => void
 }
 
@@ -52,6 +60,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   streamingContent: '',
   appointmentBooked: false,
   pendingAppointmentId: null,
+  pendingOptions: null,
 
   addMessage: (msg) =>
     set((state) => ({
@@ -82,6 +91,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   setPendingAppointmentId: (id) => set({ pendingAppointmentId: id }),
 
+  setPendingOptions: (opts) => set({ pendingOptions: opts }),
+
   resetSession: () =>
     set({
       sessionId: uuidv4(),
@@ -91,5 +102,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       streamingContent: '',
       appointmentBooked: false,
       pendingAppointmentId: null,
+      pendingOptions: null,
     }),
 }))

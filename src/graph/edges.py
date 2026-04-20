@@ -22,6 +22,17 @@ def route_after_collection(state: TriageState) -> str:
     if ready:
         return "rag_retrieval"
 
+    # Checkbox form is waiting for patient response — stay in collect_symptoms
+    if state.get("pending_options"):
+        return "collect_symptoms"
+
+    # Keep collecting until the impact checklist has been completed.
+    # Emergencies skip the checklist (red_flags branch above already handles them).
+    if (state.get("extracted_symptoms")
+            and state.get("symptom_duration")
+            and not state.get("symptom_impact")):
+        return "collect_symptoms"
+
     # Safety guardrail — prevent infinite collection loops.
     # If symptoms have been captured, proceed after 6 turns.
     # If no symptoms have been captured yet, allow 2 extra turns (up to 8)
