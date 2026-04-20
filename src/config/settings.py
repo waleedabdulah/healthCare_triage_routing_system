@@ -3,9 +3,16 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # LLM
+    # LLM provider — "groq" (default) or "claude"
+    llm_provider: str = "groq"
+
+    # Groq
     groq_api_key: str = ""
     groq_model: str = "llama-3.1-8b-instant"
+
+    # Anthropic / Claude
+    anthropic_api_key: str = ""
+    claude_model: str = "claude-opus-4-6"
 
     # App
     app_env: str = "development"
