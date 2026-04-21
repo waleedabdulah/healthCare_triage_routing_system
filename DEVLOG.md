@@ -269,6 +269,4 @@ This document is a chronological journal of everything built in this project —
 | Admin dashboard | Complete — JWT, dept scoping, bulk cancel, audit logs |
 | Patient frontend | Complete — chat, checklist form, booking modal |
 | Auth system | Complete — bcrypt, JWT HS256, 14 nurse accounts + admin |
-| Test suite | Complete — 50 tests, 100% passing, 6 flows covered |
-| Claude Code tooling | Complete — 8 agents, 6 commands, 1 pre-start hook |
 | Documentation | Complete — CLAUDE.md (1,125 lines), DEVLOG.md |
